@@ -33,7 +33,7 @@ const (
     color4Bit supportedColors = 4
     // Sometimes called 256 color support
     color8Bit supportedColors = 8
-    // Sometimes called 16m (for million) color support
+    // Sometimes called 16m (for million) or Truecolor support
     color24Bit supportedColors = 24
 )
 
@@ -59,10 +59,32 @@ func (t *TerminalColor) SupportsTrueColor() bool {
 }
 
 func Supports() *TerminalColor {
+    // Highest priority is whether or Stdout is a TTY
     if !goterm.IsTerminal(int(os.Stdout.Fd())) {
         return &TerminalColor{noColor}
     }
 
+    // Then, we look for supported Environment variables
+    termColors := os.Getenv("TERM_COLORS")
+    lcTermColors := os.Getenv("LC_TERM_COLORS")
+    userTermColors := os.Getenv("USER_TERM_COLORS")
+    if termColors != "" {
+        if userTermColors != "" {
+            return min(fromEnv(userTermColors), fromEnv(termColors))
+        }
+        return fromEnv(termColors)
+    }
+    if lcTermColors != "" {
+        if userTermColors != "" {
+            return min(fromEnv(userTermColors), fromEnv(lcTermColors))
+        }
+        return fromEnv(lcTermColors)
+    }
+    if userTermColors != "" {
+        return fromEnv(userTermColors)
+    }
+
+    // Try to guess based on the TERM_PROGRAM variables?
     t := os.Getenv("TERM_PROGRAM")
     if t != "" {
         v := os.Getenv("TERM_PROGRAM_VERSION")
@@ -81,18 +103,40 @@ func Supports() *TerminalColor {
         }
     }
 
+    // Maybe the TERM variable can tell us more?
     term := os.Getenv("TERM")
     if pattern256.MatchString(term) {
         return &TerminalColor{color8Bit}
     }
-
     if patternBasic.MatchString(term) {
         return &TerminalColor{color4Bit}
     }
-
     if term == "dumb" {
         return &TerminalColor{noColor}
     }
 
+    // If none of that worked, let's assume no color support
+    return &TerminalColor{noColor}
+}
+
+func min(a, b *TerminalColor) *TerminalColor {
+    if a.value > b.value {
+        return b
+    }
+    return a
+}
+
+func fromEnv(tc string) *TerminalColor {
+    switch tc {
+    case "none":
+        return &TerminalColor{noColor}
+    case "basic", "4bit":
+        return &TerminalColor{color4Bit}
+    case "256", "8bit":
+        return &TerminalColor{color8Bit}
+    case "16m", "Truecolor", "24bit":
+        return &TerminalColor{color24Bit}
+    }
+    // If it was set to something else, consider it "none"
     return &TerminalColor{noColor}
 }
