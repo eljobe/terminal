@@ -21,7 +21,7 @@ import (
 )
 
 func main() {
-    cs := terminal.Supports()
+    cs := terminal.ColorSupport()
     if !cs.Supports16Colors() {
         fmt.Println("No Colors Supported")
     } else {

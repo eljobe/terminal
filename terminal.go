@@ -58,7 +58,7 @@ func (t *TerminalColor) SupportsTrueColor() bool {
     return t.value >= color24Bit
 }
 
-func Supports() *TerminalColor {
+func ColorSupport() *TerminalColor {
     // Highest priority is whether or Stdout is a TTY
     if !goterm.IsTerminal(int(os.Stdout.Fd())) {
         return &TerminalColor{noColor}
