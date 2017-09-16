@@ -65,23 +65,9 @@ func ColorSupport() *TerminalColor {
     }
 
     // Then, we look for supported Environment variables
-    termColors := os.Getenv("TERM_COLORS")
-    lcTermColors := os.Getenv("LC_TERM_COLORS")
-    userTermColors := os.Getenv("USER_TERM_COLORS")
-    if termColors != "" {
-        if userTermColors != "" {
-            return min(fromEnv(userTermColors), fromEnv(termColors))
-        }
-        return fromEnv(termColors)
-    }
-    if lcTermColors != "" {
-        if userTermColors != "" {
-            return min(fromEnv(userTermColors), fromEnv(lcTermColors))
-        }
-        return fromEnv(lcTermColors)
-    }
-    if userTermColors != "" {
-        return fromEnv(userTermColors)
+    fromEnvVars := termColorFromEnvVars()
+    if fromEnvVars != nil {
+        return fromEnvVars
     }
 
     // Try to guess based on the TERM_PROGRAM variables?
@@ -119,11 +105,27 @@ func ColorSupport() *TerminalColor {
     return &TerminalColor{noColor}
 }
 
-func min(a, b *TerminalColor) *TerminalColor {
-    if a.value > b.value {
-        return b
+func termColorFromEnvVars() *TerminalColor {
+    termColors := fromEnv(getFirstEnvVar([]string{"TERM_COLORS", "LC_TERM_COLORS"}))
+    userTermColors := fromEnv(getFirstEnvVar([]string{"USER_TERM_COLORS", "LC_USER_TERM_COLORS"}))
+    if termColors == nil {
+        return userTermColors
     }
-    return a
+    if userTermColors == nil {
+        return termColors
+    }
+    return min(userTermColors, termColors)
+}
+
+func getFirstEnvVar(envVars []string) string {
+    v := ""
+    for _, envVar := range envVars {
+        v = os.Getenv(envVar)
+        if v != "" {
+            break
+        }
+    }
+    return v
 }
 
 func fromEnv(tc string) *TerminalColor {
@@ -137,6 +139,13 @@ func fromEnv(tc string) *TerminalColor {
     case "16m", "Truecolor", "24bit":
         return &TerminalColor{color24Bit}
     }
-    // If it was set to something else, consider it "none"
-    return &TerminalColor{noColor}
+    // If it was set to something else, then it cannot be determined
+    return nil
+}
+
+func min(a, b *TerminalColor) *TerminalColor {
+    if a.value > b.value {
+        return b
+    }
+    return a
 }
