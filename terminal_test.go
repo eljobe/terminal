@@ -14,6 +14,7 @@ var testCases = []struct {
     r256 bool
     r16million bool
 }{
+    {[]string{}, false, false, false},
     {[]string{"TERM=anything-256color"}, true, true, false},
     {[]string{"TERM=xterm-256"}, true, true, false},
     {[]string{"TERM=screen"}, true, false, false},
@@ -53,7 +54,7 @@ var testCases = []struct {
     {[]string{"TERM_COLORS=256", "USER_TERM_COLORS=4bit"}, true, false, false},
     {[]string{"TERM_COLORS=256", "USER_TERM_COLORS=16m"}, true, true, false},
     {[]string{"TERM_COLORS=256", "LC_USER_TERM_COLORS=4bit"}, true, false, false},
-    {[]string{"TERM_COLORS=256", "LC_USER_TERM_COLORS=16m"}, true, true, false},    
+    {[]string{"TERM_COLORS=256", "LC_USER_TERM_COLORS=16m"}, true, true, false},
 }
 
 func TestColorSupport(t *testing.T) {
