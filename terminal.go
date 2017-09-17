@@ -71,13 +71,11 @@ func ColorSupport() *TerminalColor {
     }
 
     // Try to guess based on the TERM_PROGRAM variables?
-    t := os.Getenv("TERM_PROGRAM")
-    if t != "" {
-        v := os.Getenv("TERM_PROGRAM_VERSION")
-        version, _ := strconv.Atoi(strings.Split(v, ".")[0])
+    t, tpSet := os.LookupEnv("TERM_PROGRAM")
+    if tpSet {
         switch t {
         case "iTerm.app":
-            if version >= 3 {
+            if termProgramVersion() >= 3 {
                 return &TerminalColor{color24Bit}
             } else {
                 return &TerminalColor{color8Bit}
@@ -90,19 +88,30 @@ func ColorSupport() *TerminalColor {
     }
 
     // Maybe the TERM variable can tell us more?
-    term := os.Getenv("TERM")
-    if pattern256.MatchString(term) {
-        return &TerminalColor{color8Bit}
-    }
-    if patternBasic.MatchString(term) {
-        return &TerminalColor{color4Bit}
-    }
-    if term == "dumb" {
-        return &TerminalColor{noColor}
+    term, tSet := os.LookupEnv("TERM")
+    if tSet {
+        if pattern256.MatchString(term) {
+            return &TerminalColor{color8Bit}
+        }
+        if patternBasic.MatchString(term) {
+            return &TerminalColor{color4Bit}
+        }
+        if term == "dumb" {
+            return &TerminalColor{noColor}
+        }
     }
 
     // If none of that worked, let's assume no color support
     return &TerminalColor{noColor}
+}
+
+func termProgramVersion() int {
+    v, isSet := os.LookupEnv("TERM_PROGRAM_VERSION")
+    if !isSet {
+        return -1
+    }
+    version, _ := strconv.Atoi(strings.Split(v, ".")[0])
+    return version
 }
 
 func termColorFromEnvVars() *TerminalColor {
@@ -119,9 +128,10 @@ func termColorFromEnvVars() *TerminalColor {
 
 func getFirstEnvVar(envVars []string) string {
     v := ""
+    vSet := false
     for _, envVar := range envVars {
-        v = os.Getenv(envVar)
-        if v != "" {
+        v, vSet = os.LookupEnv(envVar)
+        if vSet {
             break
         }
     }
