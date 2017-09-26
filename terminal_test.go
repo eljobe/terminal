@@ -37,24 +37,25 @@ var testCases = []struct {
     {[]string{"TERM_PROGRAM=iTerm.app", "TERM_PROGRAM_VERSION=2.3"}, true, true, false},
     {[]string{"TERM_PROGRAM=iTerm.app", "TERM_PROGRAM_VERSION=3.1"}, true, true, true},
     {[]string{"TERM_PROGRAM=iTerm.app", "TERM_PROGRAM_VERSION=20.1"}, true, true, true},
-    {[]string{"TERM=dumb","TERM_COLORS=256"}, true, true, false},
-    {[]string{"TERM_COLORS=none"}, false, false, false},
-    {[]string{"TERM_COLORS=basic"}, true, false, false},
-    {[]string{"TERM_COLORS=4bit"}, true, false, false},
-    {[]string{"TERM_COLORS=256"}, true, true, false},
-    {[]string{"TERM_COLORS=8bit"}, true, true, false},
-    {[]string{"TERM_COLORS=16m"}, true, true, true},
-    {[]string{"TERM_COLORS=24bit"}, true, true, true},
-    {[]string{"TERM_COLORS=Truecolor"}, true, true, true},
-    {[]string{"TERM_COLORS=256", "LC_TERM_COLORS=16m"}, true, true, false},
-    {[]string{"LC_TERM_COLORS=16m"}, true, true, true},
-    {[]string{"USER_TERM_COLORS=256"}, true, true, false},
-    {[]string{"LC_USER_TERM_COLORS=256"}, true, true, false},
-    {[]string{"USER_TERM_COLORS=256", "LC_USER_TERM_COLORS=16m"}, true, true, false},
-    {[]string{"TERM_COLORS=256", "USER_TERM_COLORS=4bit"}, true, false, false},
-    {[]string{"TERM_COLORS=256", "USER_TERM_COLORS=16m"}, true, true, false},
-    {[]string{"TERM_COLORS=256", "LC_USER_TERM_COLORS=4bit"}, true, false, false},
-    {[]string{"TERM_COLORS=256", "LC_USER_TERM_COLORS=16m"}, true, true, false},
+    {[]string{"TERM=dumb","COLORTERM=256"}, true, true, false},
+    {[]string{"COLORTERM=none"}, false, false, false},
+    {[]string{"COLORTERM=basic"}, true, false, false},
+    {[]string{"COLORTERM=4bit"}, true, false, false},
+    {[]string{"COLORTERM=256"}, true, true, false},
+    {[]string{"COLORTERM=8bit"}, true, true, false},
+    {[]string{"COLORTERM=16m"}, true, true, true},
+    {[]string{"COLORTERM=24bit"}, true, true, true},
+    {[]string{"COLORTERM=Truecolor"}, true, true, true},
+    {[]string{"COLORTERM=truecolor"}, true, true, true},
+    {[]string{"COLORTERM=256", "LC_COLORTERM=16m"}, true, true, false},
+    {[]string{"LC_COLORTERM=16m"}, true, true, true},
+    {[]string{"USER_COLORTERM=256"}, true, true, false},
+    {[]string{"LC_USER_COLORTERM=256"}, true, true, false},
+    {[]string{"USER_COLORTERM=256", "LC_USER_COLORTERM=16m"}, true, true, false},
+    {[]string{"COLORTERM=256", "USER_COLORTERM=4bit"}, true, false, false},
+    {[]string{"COLORTERM=256", "USER_COLORTERM=16m"}, true, true, false},
+    {[]string{"COLORTERM=256", "LC_USER_COLORTERM=4bit"}, true, false, false},
+    {[]string{"COLORTERM=256", "LC_USER_COLORTERM=16m"}, true, true, false},
 }
 
 func TestColorSupport(t *testing.T) {
@@ -92,10 +93,10 @@ func clearEnvironment() {
     os.Unsetenv("TERM")
     os.Unsetenv("TERM_PROGRAM")
     os.Unsetenv("TERM_PROGRAM_VERSION")
-    os.Unsetenv("TERM_COLORS")
-    os.Unsetenv("USER_TERM_COLORS")
-    os.Unsetenv("LC_TERM_COLORS")
-    os.Unsetenv("LC_USER_TERM_COLORS")
+    os.Unsetenv("COLORTERM")
+    os.Unsetenv("USER_COLORTERM")
+    os.Unsetenv("LC_COLORTERM")
+    os.Unsetenv("LC_USER_COLORTERM")
 }
 
 func funcName(i interface{}) string {

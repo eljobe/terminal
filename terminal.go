@@ -115,8 +115,8 @@ func termProgramVersion() int {
 }
 
 func termColorFromEnvVars() *TerminalColor {
-    termColors := fromEnv(getFirstEnvVar([]string{"TERM_COLORS", "LC_TERM_COLORS"}))
-    userTermColors := fromEnv(getFirstEnvVar([]string{"USER_TERM_COLORS", "LC_USER_TERM_COLORS"}))
+    termColors := fromEnv(getFirstEnvVar([]string{"COLORTERM", "LC_COLORTERM"}))
+    userTermColors := fromEnv(getFirstEnvVar([]string{"USER_COLORTERM", "LC_USER_COLORTERM"}))
     if termColors == nil {
         return userTermColors
     }
@@ -146,7 +146,7 @@ func fromEnv(tc string) *TerminalColor {
         return &TerminalColor{color4Bit}
     case "256", "8bit":
         return &TerminalColor{color8Bit}
-    case "16m", "Truecolor", "24bit":
+    case "16m", "Truecolor", "truecolor", "24bit":
         return &TerminalColor{color24Bit}
     }
     // If it was set to something else, then it cannot be determined
