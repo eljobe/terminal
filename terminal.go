@@ -1,18 +1,9 @@
-/*
- * Copyright 2017 Pepper Lebeck-Jobe
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright (c) Pepper Lebeck-Jobe, 2024
+// This file is licensed under the MIT License.
+// See the LICENSE.md file in the project root.
+
+// Package terminal helps developers determine various attributes of the current
+// terminal emulator in which they are running.
 package terminal
 
 import (
@@ -21,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	goterm "golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 type supportedColors int
@@ -42,26 +33,43 @@ var (
 	patternBasic = regexp.MustCompile(`^screen|^xterm|^vt100|color|ansi|cygwin|linux`)
 )
 
-type TerminalColor struct {
+// Colors has methods for number of colors supported by the current terminal
+// emulator.
+type Colors struct {
 	value supportedColors
 }
 
-func (t *TerminalColor) Supports16Colors() bool {
+// Has16 returns true if the terminal supports 4-bit color.
+func (t *Colors) Has16() bool {
 	return t.value >= color4Bit
 }
 
-func (t *TerminalColor) Supports256Colors() bool {
+// Has256 returns true if the terminal supports 8-bit color.
+func (t *Colors) Has256() bool {
 	return t.value >= color8Bit
 }
 
-func (t *TerminalColor) SupportsTrueColor() bool {
+// HasTrueColor returns true if the terminal supports 24-bit color.
+func (t *Colors) HasTrueColor() bool {
 	return t.value >= color24Bit
 }
 
-func ColorSupport() *TerminalColor {
+// HasMillions is an alias for HasTrueColor.
+func (t *Colors) HasMillions() bool {
+	return t.HasTrueColor()
+}
+
+func NewColors() *Colors {
+	return newColors(term.IsTerminal)
+}
+
+type isTerminalFunc func(fd int) bool
+
+// NewColors returns a Colors struct for the current terminal emulator.
+func newColors(isTerm isTerminalFunc) *Colors {
 	// Highest priority is whether or not Stdout is a TTY
-	if !goterm.IsTerminal(int(os.Stdout.Fd())) {
-		return &TerminalColor{noColor}
+	if !isTerm(int(os.Stdout.Fd())) {
+		return &Colors{noColor}
 	}
 
 	// Then, we look for supported Environment variables
@@ -76,14 +84,16 @@ func ColorSupport() *TerminalColor {
 		switch t {
 		case "iTerm.app":
 			if termProgramVersion() >= 3 {
-				return &TerminalColor{color24Bit}
+				return &Colors{color24Bit}
 			} else {
-				return &TerminalColor{color8Bit}
+				return &Colors{color8Bit}
 			}
+		case "ghostty":
+			return &Colors{color24Bit}
 		case "Hyper":
-			return &TerminalColor{color24Bit}
+			return &Colors{color24Bit}
 		case "Apple_Terminal":
-			return &TerminalColor{color8Bit}
+			return &Colors{color8Bit}
 		}
 	}
 
@@ -91,18 +101,18 @@ func ColorSupport() *TerminalColor {
 	term, tSet := os.LookupEnv("TERM")
 	if tSet {
 		if pattern256.MatchString(term) {
-			return &TerminalColor{color8Bit}
+			return &Colors{color8Bit}
 		}
 		if patternBasic.MatchString(term) {
-			return &TerminalColor{color4Bit}
+			return &Colors{color4Bit}
 		}
 		if term == "dumb" {
-			return &TerminalColor{noColor}
+			return &Colors{noColor}
 		}
 	}
 
 	// If none of that worked, let's assume no color support
-	return &TerminalColor{noColor}
+	return &Colors{noColor}
 }
 
 func termProgramVersion() int {
@@ -114,7 +124,7 @@ func termProgramVersion() int {
 	return version
 }
 
-func termColorFromEnvVars() *TerminalColor {
+func termColorFromEnvVars() *Colors {
 	termColors := fromEnv(getFirstEnvVar([]string{"COLORTERM", "LC_COLORTERM"}))
 	userTermColors := fromEnv(getFirstEnvVar([]string{"USER_COLORTERM", "LC_USER_COLORTERM"}))
 	if termColors == nil {
@@ -138,22 +148,22 @@ func getFirstEnvVar(envVars []string) string {
 	return v
 }
 
-func fromEnv(tc string) *TerminalColor {
+func fromEnv(tc string) *Colors {
 	switch tc {
 	case "none":
-		return &TerminalColor{noColor}
+		return &Colors{noColor}
 	case "basic", "4bit":
-		return &TerminalColor{color4Bit}
+		return &Colors{color4Bit}
 	case "256", "8bit":
-		return &TerminalColor{color8Bit}
+		return &Colors{color8Bit}
 	case "16m", "Truecolor", "truecolor", "24bit":
-		return &TerminalColor{color24Bit}
+		return &Colors{color24Bit}
 	}
 	// If it was set to something else, then it cannot be determined
 	return nil
 }
 
-func min(a, b *TerminalColor) *TerminalColor {
+func min(a, b *Colors) *Colors {
 	if a.value > b.value {
 		return b
 	}
